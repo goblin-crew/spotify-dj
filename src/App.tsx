@@ -3,7 +3,7 @@ import './App.css';
 import Logo from './assets/logo.svg';
 import GraphComponent from './components/GraphComponent/GraphComponent';
 import { DataSet } from './types/DataSet';
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 function App() {
   const [dataState, setData] = useState<DataSet>({
@@ -15,7 +15,7 @@ function App() {
   });
 
   const [duration, setDuration] = useState({
-    hours: 0,
+    hours: 1,
     minutes: 0,
   });
 
@@ -50,6 +50,15 @@ function App() {
         break;
     }
   };
+
+  useEffect(() => {
+    if (duration.hours == 0 && duration.minutes == 0) {
+      setDuration({
+        hours: 1,
+        minutes: 0,
+      });
+    }
+  }, [duration]);
 
   return (
     <Container>
@@ -86,7 +95,7 @@ function App() {
       </Col>
       <Row>
         <Col xs={12}>
-          <GraphComponent dataState={dataState} setData={setData} />
+          <GraphComponent dataState={dataState} setData={setData} duration={duration} />
         </Col>
       </Row>
     </Container>

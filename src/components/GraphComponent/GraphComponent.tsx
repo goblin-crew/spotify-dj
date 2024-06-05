@@ -1,13 +1,18 @@
-import { FC, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import './GraphComponent.css';
 import { DataSet } from '../../types/DataSet';
+import moment from 'moment';
 
 type Props = {
   dataState: DataSet;
   setData: React.Dispatch<React.SetStateAction<DataSet>>;
+  duration: {
+    hours: number;
+    minutes: number;
+  };
 };
 
-const GraphComponent: FC<Props> = ({ dataState, setData }) => {
+const GraphComponent: FC<Props> = ({ dataState, setData, duration }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const progressSteps = 5;
   const bpmSteps = 5;
@@ -15,12 +20,12 @@ const GraphComponent: FC<Props> = ({ dataState, setData }) => {
   const gridColor = 'lightgray';
   // the data is a set with the progress as key and the bpm as value. The progress is a number between 0 and 100
 
-  const [playlistLength, setPlaylistLength] = useState<number>(0);
-
   // the bounds are the min and max values of the bpm and the progress
   const [boundsState, setBounds] = useState<[number, number, number, number]>([30, 150, 0, 100]);
 
   const [mouseOverDataPoint, setMouseOverDataPoint] = useState<number | null>(null);
+
+  const [durationMs, setDurationMs] = useState<number>(0);
 
   const updateBounds = (data: DataSet) => {
     // Update the bounds of the graph using the data and normalize the bounds to the steps
@@ -51,7 +56,7 @@ const GraphComponent: FC<Props> = ({ dataState, setData }) => {
     for (let i = 0; i <= 100; i += progressSteps) {
       const x = (i / 100) * width;
       ctx.moveTo(x, 0);
-      ctx.fillText(`${i.toString()}`, x, ctx.canvas.height);
+      ctx.fillText(`${moment.utc(durationMs * (i / 100)).format('HH:mm')}`, x, ctx.canvas.height);
       ctx.lineTo(x, height);
     }
 
@@ -127,27 +132,11 @@ const GraphComponent: FC<Props> = ({ dataState, setData }) => {
   useEffect(() => {
     updateBounds(dataState);
     updateCanvas();
-  }, [dataState, mouseOverDataPoint]);
+  }, [dataState, mouseOverDataPoint, durationMs]);
 
   useEffect(() => {
     var isDragging = false;
     var expired: number | null = null;
-
-    // Add datapoint to the graph on click and update bpm bounds
-    const handleClick = (event: MouseEvent) => {
-      isDragging = false;
-      if (canvasRef.current) {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const width = rect.width;
-        const height = rect.height;
-        // Normalize to steps
-        const progress: number = Math.round(((x / width) * 100) / progressSteps) * progressSteps;
-        const bpm = Math.round(convertPercentageToBpm((1 / height) * y, boundsState));
-        setData((prev) => ({ ...prev, [progress]: bpm }));
-      }
-    };
 
     const handleDoubleClick = (event: MouseEvent) => {
       if (canvasRef.current) {
@@ -303,6 +292,11 @@ const GraphComponent: FC<Props> = ({ dataState, setData }) => {
       canvasRef.current?.removeEventListener('mousemove', (e) => {});
     };
   }, [canvasRef, boundsState, dataState]);
+
+  useEffect(() => {
+    setDurationMs(moment.duration(0).add(duration.hours, 'hours').add(duration.minutes, 'minutes').as('milliseconds'));
+    console.log(moment.duration(0).add(duration.hours, 'hours').add(duration.minutes, 'minutes').as('milliseconds'));
+  }, [duration]);
 
   return <canvas ref={canvasRef} id="graph" className="graphCanvas user-select-none" />;
 };
