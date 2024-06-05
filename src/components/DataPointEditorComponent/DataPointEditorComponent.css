@@ -1,4 +1,16 @@
+.addDataPoint {
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 2;
+}
+
+.addDataPoint:hover {
+  opacity: 1;
+  cursor: pointer;
+}
+
 .separator {
+  top: 100%;
   display: flex;
   align-items: center;
   text-align: center;

@@ -10,12 +10,14 @@ type Props = {
     hours: number;
     minutes: number;
   };
+
+  progressSteps: number;
+  bpmSteps: number;
 };
 
-const GraphComponent: FC<Props> = ({ dataState, setData, duration }) => {
+const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps, bpmSteps }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const progressSteps = 5;
-  const bpmSteps = 5;
+
   const graphColor = 'blue';
   const gridColor = 'lightgray';
   // the data is a set with the progress as key and the bpm as value. The progress is a number between 0 and 100
@@ -295,7 +297,6 @@ const GraphComponent: FC<Props> = ({ dataState, setData, duration }) => {
 
   useEffect(() => {
     setDurationMs(moment.duration(0).add(duration.hours, 'hours').add(duration.minutes, 'minutes').as('milliseconds'));
-    console.log(moment.duration(0).add(duration.hours, 'hours').add(duration.minutes, 'minutes').as('milliseconds'));
   }, [duration]);
 
   return <canvas ref={canvasRef} id="graph" className="graphCanvas user-select-none" />;
