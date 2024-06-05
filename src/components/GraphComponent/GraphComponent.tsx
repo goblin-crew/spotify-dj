@@ -6,16 +6,12 @@ import moment from 'moment';
 type Props = {
   dataState: DataSet;
   setData: React.Dispatch<React.SetStateAction<DataSet>>;
-  duration: {
-    hours: number;
-    minutes: number;
-  };
   progressSteps: number;
   bpmSteps: number;
   durationMs: number;
 };
 
-const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps, bpmSteps, durationMs }) => {
+const GraphComponent: FC<Props> = ({ dataState, setData, progressSteps, bpmSteps, durationMs }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const graphColor = 'blue';
@@ -244,9 +240,7 @@ const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps
       if (canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
         const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
         const width = rect.width;
-        const height = rect.height;
         const progress: number = Math.round(((x / width) * 100) / progressSteps) * progressSteps;
         if (dataState[progress]) {
           setMouseOverDataPoint(progress);
@@ -280,7 +274,7 @@ const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps
         isDragging = false;
         setMouseOverDataPoint(null);
       });
-      canvasRef.current?.removeEventListener('touchmove', (e) => {});
+      canvasRef.current?.removeEventListener('touchmove', () => {});
 
       canvasRef.current?.removeEventListener('mouseup', () => {
         isDragging = false;
@@ -289,7 +283,7 @@ const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps
         isDragging = false;
       });
 
-      canvasRef.current?.removeEventListener('mousemove', (e) => {});
+      canvasRef.current?.removeEventListener('mousemove', () => {});
     };
   }, [canvasRef, boundsState, dataState]);
 

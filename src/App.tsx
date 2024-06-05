@@ -85,7 +85,6 @@ function App() {
             <GraphComponent
               dataState={dataState}
               setData={setData}
-              duration={duration}
               progressSteps={progressSteps}
               bpmSteps={bpmSteps}
               durationMs={durationMs}
