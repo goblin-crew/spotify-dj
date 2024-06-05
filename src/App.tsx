@@ -6,6 +6,7 @@ import { DataSet } from './types/DataSet';
 import { useEffect, useState } from 'react';
 import DataPointEditorComponent from './components/DataPointEditorComponent/DataPointEditorComponent';
 import DurationInputComponent from './components/DurationInputComponent/DurationInputComponent';
+import moment from 'moment';
 
 function App() {
   const progressSteps = 5;
@@ -23,6 +24,8 @@ function App() {
     minutes: 0,
   });
 
+  const [durationMs, setDurationMs] = useState<number>(0);
+
   useEffect(() => {
     if (duration.hours == 0 && duration.minutes == 0) {
       setDuration({
@@ -30,6 +33,7 @@ function App() {
         minutes: 0,
       });
     }
+    setDurationMs(moment.duration(0).add(duration.hours, 'hours').add(duration.minutes, 'minutes').as('milliseconds'));
   }, [duration]);
 
   useEffect(() => {
@@ -77,6 +81,7 @@ function App() {
             duration={duration}
             progressSteps={progressSteps}
             bpmSteps={bpmSteps}
+            durationMs={durationMs}
           />
         </Col>
         <Col xs={3}>
@@ -85,7 +90,7 @@ function App() {
             setData={setData}
             duration={duration}
             progressSteps={progressSteps}
-            setDuration={setDuration}
+            durationMs={durationMs}
           />
         </Col>
       </Row>

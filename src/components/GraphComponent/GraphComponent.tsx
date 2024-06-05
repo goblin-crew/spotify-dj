@@ -10,12 +10,12 @@ type Props = {
     hours: number;
     minutes: number;
   };
-
   progressSteps: number;
   bpmSteps: number;
+  durationMs: number;
 };
 
-const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps, bpmSteps }) => {
+const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps, bpmSteps, durationMs }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const graphColor = 'blue';
@@ -26,8 +26,6 @@ const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps
   const [boundsState, setBounds] = useState<[number, number, number, number]>([30, 150, 0, 100]);
 
   const [mouseOverDataPoint, setMouseOverDataPoint] = useState<number | null>(null);
-
-  const [durationMs, setDurationMs] = useState<number>(0);
 
   const updateBounds = (data: DataSet) => {
     // Update the bounds of the graph using the data and normalize the bounds to the steps
@@ -294,10 +292,6 @@ const GraphComponent: FC<Props> = ({ dataState, setData, duration, progressSteps
       canvasRef.current?.removeEventListener('mousemove', (e) => {});
     };
   }, [canvasRef, boundsState, dataState]);
-
-  useEffect(() => {
-    setDurationMs(moment.duration(0).add(duration.hours, 'hours').add(duration.minutes, 'minutes').as('milliseconds'));
-  }, [duration]);
 
   return <canvas ref={canvasRef} id="graph" className="graphCanvas user-select-none" />;
 };

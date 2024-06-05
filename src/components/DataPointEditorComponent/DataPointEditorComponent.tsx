@@ -9,12 +9,12 @@ type Props = {
   setData: React.Dispatch<React.SetStateAction<DataSet>>;
   duration: { hours: number; minutes: number };
   progressSteps: number;
-  setDuration: React.Dispatch<React.SetStateAction<{ hours: number; minutes: number }>>;
+  durationMs: number;
 };
 
-const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, progressSteps, setDuration }) => {
-  const [durationMs, setDurationMs] = useState<number>(0);
+const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, progressSteps, durationMs }) => {
   const [timeStamp, setTimeStamp] = useState<string[]>([]);
+  const [localBpm, setLocalBpm] = useState<number[]>(Object.values(dataState));
   const [progressIsInvalid, setProgressIsInvalid] = useState<(boolean | undefined)[]>([]);
   const [bpmIsInvalid, setBpmIsInvalid] = useState<(boolean | undefined)[]>([]);
 
@@ -23,9 +23,6 @@ const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, pro
     delete newDataState[progress];
     setData(newDataState);
   };
-  useEffect(() => {
-    setDurationMs(moment.duration(0).add(duration.hours, 'hours').add(duration.minutes, 'minutes').as('milliseconds'));
-  }, [duration]);
 
   useEffect(() => {
     setTimeStamp(Object.keys(dataState).map((progress) => progressToTime(+progress)));
@@ -35,36 +32,33 @@ const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, pro
     return moment.utc(durationMs * (progress / 100)).format('HH:mm');
   };
 
-  const timeToProgress = (time: string) => {
-    return (
-      Math.round(
-        ((100 / durationMs) *
-          moment
-            .duration(0)
-            .add(moment(time, 'HH:mm').get('hours'), 'hours')
-            .add(moment(time, 'HH:mm').get('minutes'), 'minutes')
-            .as('milliseconds')) /
-          progressSteps
-      ) * progressSteps
-    );
+  const timeToMs = (time: string) => {
+    return moment
+      .duration(0)
+      .add(moment(time, 'HH:mm').get('hours'), 'hours')
+      .add(moment(time, 'HH:mm').get('minutes'), 'minutes')
+      .as('milliseconds');
   };
 
-  const updateDuration = () => {
-    const sortedTimeStamps = timeStamp.sort((a, b) => moment(a, 'HH:mm').diff(moment(b, 'HH:mm')));
-    const newDuration = moment.duration(
-      moment(sortedTimeStamps[sortedTimeStamps.length - 1], 'HH:mm').diff(moment(sortedTimeStamps[0], 'HH:mm'))
-    );
-
-    setDuration({ hours: newDuration.get('hours'), minutes: newDuration.get('minutes') });
+  const timeToProgress = (time: string) => {
+    return Math.round(((100 / durationMs) * timeToMs(time)) / progressSteps) * progressSteps;
   };
 
   const onTimeStampBlur = (event: React.FormEvent, i: number) => {
     const target = event.target as HTMLInputElement;
-    if (!validateProgress(target.value, i)) return;
+    if (!validateTimestamp(target.value, i)) return;
     const newProgress = timeToProgress(target.value);
     const newDataState = { ...dataState };
     delete newDataState[+Object.keys(dataState)[i]];
     newDataState[+newProgress] = dataState[+Object.keys(dataState)[i]];
+    setData(newDataState);
+  };
+
+  const onBpmBlur = (event: React.FormEvent, i: number) => {
+    const target = event.target as HTMLInputElement;
+    if (!validateBpm(target.value, i)) return;
+    const newDataState = { ...dataState };
+    newDataState[+Object.keys(dataState)[i]] = parseInt(target.value);
     setData(newDataState);
   };
 
@@ -94,8 +88,8 @@ const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, pro
     }
   };
 
-  const validateProgress = (progress: string, i: number) => {
-    if (progress.match(/[0-5][0-9]:[0-5][0-9]/) === null) {
+  const validateTimestamp = (time: string, i: number) => {
+    if (!/[0-5][0-9]:[0-5][0-9]/.test(time) || timeToMs(time) > durationMs) {
       setProgressIsInvalid((prev) => {
         const newProgressIsInvalid = [...prev];
         newProgressIsInvalid[i] = true;
@@ -125,8 +119,7 @@ const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, pro
                     <i className="bi-clock"></i>
                   </InputGroup.Text>
                   <Form.Control
-                    value={timeStamp[i]}
-                    pattern="[0-5][0-9]\:[0-5][0-9]"
+                    value={timeStamp[i] || progressToTime(+progress)}
                     isInvalid={progressIsInvalid[i]}
                     onBlur={(e) => {
                       onTimeStampBlur(e, i);
@@ -137,7 +130,7 @@ const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, pro
                         newTimeStamp[i] = e.target.value;
                         return newTimeStamp;
                       });
-                      validateProgress(e.target.value, i) && updateDuration();
+                      validateTimestamp(e.target.value, i);
                     }}
                     type="string"
                     placeholder="Progress"
@@ -150,18 +143,19 @@ const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, pro
                   </InputGroup.Text>
                   <FloatingLabel controlId="floatingInput" label="BPM">
                     <Form.Control
-                      value={+bpm}
+                      value={localBpm[i] || 50}
                       isInvalid={bpmIsInvalid[i]}
                       min={1}
                       onBlur={(e) => {
-                        validateBpm(e.target.value, i);
+                        onBpmBlur(e, i);
                       }}
                       onChange={(e) => {
+                        setLocalBpm((prev) => {
+                          const newLocalBpm = [...prev];
+                          newLocalBpm[i] = parseInt(e.target.value);
+                          return newLocalBpm;
+                        });
                         validateBpm(e.target.value, i);
-                        const newBpm = parseInt(e.target.value);
-                        const newDataState = { ...dataState };
-                        newDataState[+progress] = newBpm;
-                        setData(newDataState);
                       }}
                       type="number"
                       placeholder="BPM"
