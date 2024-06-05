@@ -7,12 +7,11 @@ import './DataPointEditorComponent.css';
 type Props = {
   dataState: DataSet;
   setData: React.Dispatch<React.SetStateAction<DataSet>>;
-  duration: { hours: number; minutes: number };
   progressSteps: number;
   durationMs: number;
 };
 
-const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, progressSteps, durationMs }) => {
+const DataPointEditorComponent: FC<Props> = ({ dataState, setData, progressSteps, durationMs }) => {
   const [timeStamp, setTimeStamp] = useState<string[]>([]);
   const [localBpm, setLocalBpm] = useState<number[]>(Object.values(dataState));
   const [progressIsInvalid, setProgressIsInvalid] = useState<(boolean | undefined)[]>([]);
@@ -111,7 +110,7 @@ const DataPointEditorComponent: FC<Props> = ({ dataState, setData, duration, pro
       {dataState &&
         Object.entries(dataState)
           .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-          .map(([progress, bpm], i, sortedArray) => (
+          .map(([progress], i, sortedArray) => (
             <Row key={progress} className="position-relative mb-3">
               <Col xs={12}>
                 <InputGroup>

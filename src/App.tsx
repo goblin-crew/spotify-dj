@@ -94,7 +94,6 @@ function App() {
             <DataPointEditorComponent
               dataState={dataState}
               setData={setData}
-              duration={duration}
               progressSteps={progressSteps}
               durationMs={durationMs}
             />
