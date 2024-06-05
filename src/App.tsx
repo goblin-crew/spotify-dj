@@ -1,4 +1,4 @@
-import { Col, Container, Row } from 'react-bootstrap';
+import { Col, Container, Navbar, Row } from 'react-bootstrap';
 import './App.css';
 import Logo from './assets/logo.svg';
 import GraphComponent from './components/GraphComponent/GraphComponent';
@@ -66,35 +66,44 @@ function App() {
   }, [dataState]);
 
   return (
-    <Container>
-      <img src={Logo} alt="Spotify DJ Logo" width={'10%'} />
-      <h1>Spotify DJ</h1>
-      <h2>Playlist</h2>
-      <Col xs={3}>
-        <DurationInputComponent duration={duration} setDuration={setDuration} />
-      </Col>
-      <Row>
-        <Col xs={9}>
-          <GraphComponent
-            dataState={dataState}
-            setData={setData}
-            duration={duration}
-            progressSteps={progressSteps}
-            bpmSteps={bpmSteps}
-            durationMs={durationMs}
-          />
+    <>
+      <Navbar className="bg-body-tertiary">
+        <Container>
+          <Navbar.Brand href="">
+            <img src={Logo} alt="Spotify DJ Logo" width={'10%'} className="d-inline-block align-top" />
+            <span className="h3 ms-4 d-inline-block align-middle">Spotify DJ</span>
+          </Navbar.Brand>
+        </Container>
+      </Navbar>
+      <Container>
+        <h2>BPM Graph</h2>
+        <Col xs={3} className="mb-2">
+          <DurationInputComponent duration={duration} setDuration={setDuration} />
         </Col>
-        <Col xs={3}>
-          <DataPointEditorComponent
-            dataState={dataState}
-            setData={setData}
-            duration={duration}
-            progressSteps={progressSteps}
-            durationMs={durationMs}
-          />
-        </Col>
-      </Row>
-    </Container>
+        <Row>
+          <Col xs={9} style={{ maxHeight: '50vh' }}>
+            <GraphComponent
+              dataState={dataState}
+              setData={setData}
+              duration={duration}
+              progressSteps={progressSteps}
+              bpmSteps={bpmSteps}
+              durationMs={durationMs}
+            />
+          </Col>
+          <Col xs={3} className="overflow-y-auto" style={{ maxHeight: '50vh' }}>
+            <DataPointEditorComponent
+              dataState={dataState}
+              setData={setData}
+              duration={duration}
+              progressSteps={progressSteps}
+              durationMs={durationMs}
+            />
+          </Col>
+        </Row>
+        <hr />
+      </Container>
+    </>
   );
 }
 
