@@ -1,5 +1,4 @@
 .graphSVG {
-  /* background-color: #e0e0e0; */
   background-color: #ffffff;
 }
 
@@ -9,21 +8,23 @@
   fill: #000000;
 }
 
+.transition1 {
+  transition: all 0.1s;
+}
+
 .dataPointCircle {
-  fill: greenyellow;
 }
 
 .dataPointCircle:hover {
-  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+  filter: url('#glow');
 }
 
 .dataPointCircle.active {
-  fill: #00d9ff;
+  filter: url('#glow');
 }
 
 .dataLine {
   stroke: url('#rainbow');
-  stroke-width: 4;
   filter: url('#lineBackDrop');
   mask: url('#lineMask');
 }

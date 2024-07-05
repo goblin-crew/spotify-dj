@@ -1,7 +1,6 @@
 import { Col, Container, Navbar, Row } from 'react-bootstrap';
 import './App.css';
 import Logo from './assets/logo.svg';
-// import GraphComponent from './components/GraphComponentSVG/GraphComponent';
 import { DataSet } from './types/DataSet';
 import { useEffect, useState } from 'react';
 import DataPointEditorComponent from './components/DataPointEditorComponent/DataPointEditorComponent';

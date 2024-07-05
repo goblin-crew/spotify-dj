@@ -15,13 +15,12 @@ type PlotCoordinate = [number, number];
 
 const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bpmSteps, durationMs }) => {
   const [boundsState, setBounds] = useState<[number, number, number, number]>([30, 150, 0, 100]);
-  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const [draggingPoint, setDraggingPoint] = useState<number | null>(null);
   const [currnetMouseData, setCurrnetMouseData] = useState<[number, number, number, number]>([0, 0, 0, 0]);
   const svgRef = React.createRef<SVGSVGElement>();
   const [width, setWidth] = useState<number>(0);
   const [height, setHeight] = useState<number>(0);
-  const [bezierCommands, setBezierCommands] = useState<string>('');
+  const [bezierCommands, setBezierCommands] = useState<string>();
 
   const [showTooltip, setShowTooltip] = useState(true);
 
@@ -35,7 +34,18 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
   );
 
   useEffect(() => {
+    if (svgRef.current) {
+      const rect = svgRef.current.getBoundingClientRect();
+      setWidth(rect.width);
+      setHeight(rect.height);
+    }
+  }, [svgRef]);
+
+  useEffect(() => {
     updateBounds(dataState);
+  }, [dataState, updateBounds]);
+
+  useEffect(() => {
     const points: PlotCoordinate[] = Object.entries(dataState)
       .sort(([a], [b]) => Number(a) - Number(b))
       .map(([progress, bpm]) => {
@@ -52,18 +62,9 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
       }
       bezComs.push(bezierCommand(point, i, a));
     });
-    console.log(bezComs);
 
     setBezierCommands(`${bezComs.join(' ')}`);
-  }, [dataState, updateBounds]);
-
-  useEffect(() => {
-    if (svgRef.current) {
-      const rect = svgRef.current.getBoundingClientRect();
-      setWidth(rect.width);
-      setHeight(rect.height);
-    }
-  }, [svgRef]);
+  }, [dataState, width, height, boundsState]);
 
   const handleMouseDown = (e: React.MouseEvent<SVGCircleElement>, progress: number) => {
     setDraggingPoint(progress);
@@ -102,7 +103,6 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
     const newData = { ...dataState };
     delete newData[progress];
     setData(newData);
-    setSelectedPoint(null);
   };
 
   const handlePointAdd = (e: React.MouseEvent<SVGElement>) => {
@@ -210,15 +210,13 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
       {/* Defs for styling */}
       <defs>
         <filter id="lineBackDrop" y="-50%" height="400%">
-          <feGaussianBlur stdDeviation="0 10" result="blur1" />
-          <feGaussianBlur in="blur1" stdDeviation="0 10" result="blur1" />
-          <feGaussianBlur in="blur1" stdDeviation="0 10" result="blur1" />
-          <feGaussianBlur in="blur1" stdDeviation="10" result="blur1" />
+          <feGaussianBlur stdDeviation="0 5" result="blur1" />
+          <feGaussianBlur in="blur1" stdDeviation="2" result="blur1" />
 
-          <feOffset in="blur1" result="offsetBlur" dx="0" dy="40" />
+          <feOffset in="blur1" result="offsetBlur" dx="0" dy="10" />
 
           <feComponentTransfer in="offsetBlur" result="transfer1">
-            <feFuncA type="table" tableValues="0 15" />
+            <feFuncA type="table" tableValues="0 2" />
           </feComponentTransfer>
 
           <feGaussianBlur in="transfer1" stdDeviation="10 60" result="blur2" />
@@ -229,13 +227,26 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
           </feMerge>
         </filter>
 
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
         <linearGradient id="rainbow" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100%" y2="0">
-          <stop offset="0" stop-color="#ff0000"></stop>
-          <stop offset="0.2" stop-color="#ffff00"></stop>
-          <stop offset="0.4" stop-color="#00ff00"></stop>
-          <stop offset="0.6" stop-color="#00ffff"></stop>
-          <stop offset="0.8" stop-color="#0000ff"></stop>
-          <stop offset="1" stop-color="#800080"></stop>
+          {width &&
+            Object.entries(dataState).map(([progress, bpm]) => {
+              const x = convertProgressToX(Number(progress), width);
+              return (
+                <stop
+                  key={progress}
+                  offset={`${(x / width) * 100}%`}
+                  stopColor={`hsl(${(bpm / boundsState[1]) * 360}, 100%, 50%)`}
+                />
+              );
+            })}
         </linearGradient>
 
         <mask id="lineMask" height="400%">
@@ -243,6 +254,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
             <path
               fill="white"
               strokeWidth="4"
+              className="transition1"
               d={`M 0 ${height}
           L ${convertProgressToX(0, width)},${convertBpmToY(dataState[0], height, boundsState)}
           ${bezierCommands}
@@ -287,16 +299,13 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
         bezierCommands && (
           <path
             fill="none"
-            stroke="url(#rainbow)"
-            strokeWidth="2"
-            className="dataLine user-select-none"
+            strokeWidth="8"
+            className="dataLine user-select-none transition1"
             d={`M${convertProgressToX(0, width)},${convertBpmToY(dataState[0], height, boundsState)} ${bezierCommands}`}
-            filter="url(#lineBackDrop)"
-            mask="url(#lineMask)"
           />
         )
       }
-      {/* Modified circle elements for draggable functionality */}
+      {/* circle elements for draggable functionality */}
       {Object.entries(dataState).map(([progress, bpm]) => {
         const x = convertProgressToX(Number(progress), width);
         const y = convertBpmToY(bpm, height, boundsState);
@@ -306,8 +315,8 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
             cx={x}
             cy={y}
             r="6"
-            fill={selectedPoint === Number(progress) ? 'red' : ''}
-            className="dataPointCircle user-select-none"
+            fill={`hsl(${(bpm / boundsState[1]) * 360}, 100%, 50%)`}
+            className={`dataPointCircle user-select-none transition1 ${draggingPoint == +progress ? 'active' : ''}`}
             onMouseDown={(e) => handleMouseDown(e, Number(progress))}
             onDoubleClick={(e) => handlePointDelete(e, Number(progress))}
           />
