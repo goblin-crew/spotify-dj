@@ -11,6 +11,8 @@ type Props = {
   durationMs: number;
 };
 
+type PlotCoordinate = [number, number];
+
 const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bpmSteps, durationMs }) => {
   const [boundsState, setBounds] = useState<[number, number, number, number]>([30, 150, 0, 100]);
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
@@ -19,6 +21,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
   const svgRef = React.createRef<SVGSVGElement>();
   const [width, setWidth] = useState<number>(0);
   const [height, setHeight] = useState<number>(0);
+  const [bezierCommands, setBezierCommands] = useState<string>('');
 
   const [showTooltip, setShowTooltip] = useState(true);
 
@@ -33,6 +36,25 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
 
   useEffect(() => {
     updateBounds(dataState);
+    const points: PlotCoordinate[] = Object.entries(dataState)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([progress, bpm]) => {
+        const x = convertProgressToX(Number(progress), width);
+        const y = convertBpmToY(bpm, height, boundsState);
+        return [x, y];
+      });
+
+    const bezComs: string[] = [];
+
+    points.forEach((point, i, a) => {
+      if (i <= 0) {
+        return;
+      }
+      bezComs.push(bezierCommand(point, i, a));
+    });
+    console.log(bezComs);
+
+    setBezierCommands(`${bezComs.join(' ')}`);
   }, [dataState, updateBounds]);
 
   useEffect(() => {
@@ -120,7 +142,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
     return bounds[0] + (1 - percentage) * (bounds[1] - bounds[0]);
   };
 
-  const line = (pointA, pointB) => {
+  const line = (pointA: PlotCoordinate, pointB: PlotCoordinate) => {
     const lengthX = pointB[0] - pointA[0];
     const lengthY = pointB[1] - pointA[1];
     return {
@@ -135,18 +157,25 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
   //     - next (array) [x, y]: next point coordinates
   //     - reverse (boolean, optional): sets the direction
   // O:  - (array) [x,y]: a tuple of coordinates
-  const controlPoint = (current, previous, next, reverse) => {
+  const controlPoint = (current: PlotCoordinate, previous: PlotCoordinate, next: PlotCoordinate, reverse?: boolean) => {
     // When 'current' is the first or last point of the array
     // 'previous' or 'next' don't exist.
     // Replace with 'current'
     const p = previous || current;
     const n = next || current;
     // The smoothing ratio
-    const smoothing = 0.2;
+    const smoothing = 0.1;
+
+    // The flattening ratio
+    const flattening = 0.5;
     // Properties of the opposed-line
     const o = line(p, n);
+    // const flat = lib.map(Math.cos(o.angle) * this.o.line.flattening, 0, 1, 1, 0);
+
+    const flat = Math.min(Math.max(flattening, 0), 1);
+
     // If is end-control-point, add PI to the angle to go backward
-    const angle = o.angle + (reverse ? Math.PI : 0);
+    const angle = o.angle * flat + (reverse ? Math.PI : 0);
     const length = o.length * smoothing;
     // The control point position is relative to the current point
     const x = current[0] + Math.cos(angle) * length;
@@ -159,7 +188,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
   //     - i (integer): index of 'point' in the array 'a'
   //     - a (array): complete array of points coordinates
   // O:  - (string) 'C x2,y2 x1,y1 x,y': SVG cubic bezier C command
-  const bezierCommand = (point, i, a) => {
+  const bezierCommand = (point: PlotCoordinate, i: number, a: PlotCoordinate[]) => {
     // start control point
     const [cpsX, cpsY] = controlPoint(a[i - 1], a[i - 2], point);
     // end control point
@@ -210,18 +239,16 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
         </linearGradient>
 
         <mask id="lineMask" height="400%">
-          <polyline
-            fill="white"
-            strokeWidth="2"
-            points={`0,${height} ${Object.entries(dataState)
-              .sort(([a], [b]) => Number(a) - Number(b))
-              .map(([progress, bpm]) => {
-                const x = convertProgressToX(Number(progress), width);
-                const y = convertBpmToY(bpm, height, boundsState);
-                return `${x},${y}`;
-              })
-              .join(' ')} ${width},${height}`}
-          />
+          {bezierCommands && (
+            <path
+              fill="white"
+              strokeWidth="4"
+              d={`M 0 ${height}
+          L ${convertProgressToX(0, width)},${convertBpmToY(dataState[0], height, boundsState)}
+          ${bezierCommands}
+           L ${width} ${height} Z`}
+            />
+          )}
         </mask>
       </defs>
 
@@ -255,20 +282,20 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
       })}
 
       {/* Data Points and Line */}
-      <polyline
-        fill="none"
-        stroke="blue"
-        strokeWidth="2"
-        className="dataLine user-select-none"
-        points={Object.entries(dataState)
-          .sort(([a], [b]) => Number(a) - Number(b))
-          .map(([progress, bpm]) => {
-            const x = convertProgressToX(Number(progress), width);
-            const y = convertBpmToY(bpm, height, boundsState);
-            return `${x},${y}`;
-          })
-          .join(' ')}
-      />
+      {
+        // Bezier Curve
+        bezierCommands && (
+          <path
+            fill="none"
+            stroke="url(#rainbow)"
+            strokeWidth="2"
+            className="dataLine user-select-none"
+            d={`M${convertProgressToX(0, width)},${convertBpmToY(dataState[0], height, boundsState)} ${bezierCommands}`}
+            filter="url(#lineBackDrop)"
+            mask="url(#lineMask)"
+          />
+        )
+      }
       {/* Modified circle elements for draggable functionality */}
       {Object.entries(dataState).map(([progress, bpm]) => {
         const x = convertProgressToX(Number(progress), width);
