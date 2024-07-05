@@ -18,3 +18,25 @@
 .separator:not(:empty)::after {
   margin-left: 0.25em;
 }
+
+.aspectSquare {
+  aspect-ratio: 1 !important;
+}
+
+.lineClamp4 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.lineClamp2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.clickable {
+  cursor: pointer;
+}

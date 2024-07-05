@@ -9,11 +9,19 @@ type Props = {
   progressSteps: number;
   bpmSteps: number;
   durationMs: number;
+  additionalData?: [number, any][];
 };
 
 type PlotCoordinate = [number, number];
 
-const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bpmSteps, durationMs }) => {
+const GraphComponent: React.FC<Props> = ({
+  dataState,
+  setData,
+  progressSteps,
+  bpmSteps,
+  durationMs,
+  additionalData,
+}) => {
   const [boundsState, setBounds] = useState<[number, number, number, number]>([30, 150, 0, 100]);
   const [draggingPoint, setDraggingPoint] = useState<number | null>(null);
   const [currnetMouseData, setCurrnetMouseData] = useState<[number, number, number, number]>([0, 0, 0, 0]);
@@ -23,6 +31,8 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
   const [bezierCommands, setBezierCommands] = useState<string>();
 
   const [showTooltip, setShowTooltip] = useState(true);
+
+  const uid = Math.random().toString(36).substring(7);
 
   const updateBounds = useCallback(
     (data: DataSet) => {
@@ -71,6 +81,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
   };
 
   const handleMouseMove = (e: React.MouseEvent<SVGElement>) => {
+    setShowTooltip(true);
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -95,6 +106,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
 
   const handleMouseUp = () => {
     setDraggingPoint(null);
+    setShowTooltip(false);
   };
 
   const handlePointDelete = (e: React.MouseEvent<SVGCircleElement, MouseEvent>, progress: number) => {
@@ -209,7 +221,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
     >
       {/* Defs for styling */}
       <defs>
-        <filter id="lineBackDrop" y="-50%" height="400%">
+        <filter id={`lineBackDrop${uid}`} y="-50%" height="400%">
           <feGaussianBlur stdDeviation="0 5" result="blur1" />
           <feGaussianBlur in="blur1" stdDeviation="2" result="blur1" />
 
@@ -235,7 +247,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
           </feMerge>
         </filter>
 
-        <linearGradient id="rainbow" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100%" y2="0">
+        <linearGradient id={`rainbow${uid}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100%" y2="0">
           {width &&
             Object.entries(dataState).map(([progress, bpm]) => {
               const x = convertProgressToX(Number(progress), width);
@@ -249,7 +261,7 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
             })}
         </linearGradient>
 
-        <mask id="lineMask" height="400%">
+        <mask id={`lineMask${uid}`} height="400%">
           {bezierCommands && (
             <path
               fill="white"
@@ -301,6 +313,9 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
             fill="none"
             strokeWidth="8"
             className="dataLine user-select-none transition1"
+            stroke={`url(#rainbow${uid})`}
+            filter={`url(#lineBackDrop${uid})`}
+            mask={`url(#lineMask${uid})`}
             d={`M${convertProgressToX(0, width)},${convertBpmToY(dataState[0], height, boundsState)} ${bezierCommands}`}
           />
         )
@@ -310,16 +325,22 @@ const GraphComponent: React.FC<Props> = ({ dataState, setData, progressSteps, bp
         const x = convertProgressToX(Number(progress), width);
         const y = convertBpmToY(bpm, height, boundsState);
         return (
-          <circle
-            key={progress}
-            cx={x}
-            cy={y}
-            r="6"
-            fill={`hsl(${(bpm / boundsState[1]) * 360}, 100%, 50%)`}
-            className={`dataPointCircle user-select-none transition1 ${draggingPoint == +progress ? 'active' : ''}`}
-            onMouseDown={(e) => handleMouseDown(e, Number(progress))}
-            onDoubleClick={(e) => handlePointDelete(e, Number(progress))}
-          />
+          <g key={progress}>
+            <circle
+              cx={x}
+              cy={y}
+              r="6"
+              fill={`hsl(${(bpm / boundsState[1]) * 360}, 100%, 50%)`}
+              className={`dataPointCircle user-select-none transition1 ${draggingPoint == +progress ? 'active' : ''}`}
+              onMouseDown={(e) => handleMouseDown(e, Number(progress))}
+              onDoubleClick={(e) => handlePointDelete(e, Number(progress))}
+            />
+            {additionalData && additionalData.find(([p]) => p === Number(progress)) && (
+              <g className="user-user-select-none additionalData">
+                {additionalData.find(([p]) => p === Number(progress))![1]}
+              </g>
+            )}
+          </g>
         );
       })}
 

@@ -7,16 +7,19 @@ import DataPointEditorComponent from './components/DataPointEditorComponent/Data
 import DurationInputComponent from './components/DurationInputComponent/DurationInputComponent';
 import moment from 'moment';
 import GraphComponent from './components/GraphComponent/GraphComponent';
+import PlaylistSelectionComponent from './components/PlaylistSelectionComponent/PlaylistSelectionComponent';
+import { useSpotify } from './hooks/useSpotify';
+import { Scopes } from '@spotify/web-api-ts-sdk';
 
 function App() {
   const progressSteps = 5;
   const bpmSteps = 5;
   const [dataState, setDataState] = useState<DataSet>({
-    0: 50,
-    20: 70,
-    50: 60,
-    70: 100,
-    100: 50,
+    0: 90,
+    20: 150,
+    50: 100,
+    70: 180,
+    100: 160,
   });
 
   const [duration, setDuration] = useState({
@@ -25,6 +28,11 @@ function App() {
   });
 
   const [durationMs, setDurationMs] = useState<number>(0);
+
+  const sdk = useSpotify(import.meta.env.VITE_SPOTIFY_CLIENT_ID, import.meta.env.VITE_REDIRECT_TARGET, [
+    ...Scopes.userDetails,
+    ...Scopes.playlist,
+  ]);
 
   useEffect(() => {
     if (duration.hours == 0 && duration.minutes == 0) {
@@ -100,6 +108,9 @@ function App() {
           </Col>
         </Row>
         <hr />
+        <Row>
+          <Col>{sdk && <PlaylistSelectionComponent sdk={sdk} dataState={dataState} durationMs={durationMs} />}</Col>
+        </Row>
       </Container>
     </>
   );

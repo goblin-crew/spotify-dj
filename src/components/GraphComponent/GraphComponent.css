@@ -12,9 +12,6 @@
   transition: all 0.1s;
 }
 
-.dataPointCircle {
-}
-
 .dataPointCircle:hover {
   filter: url('#glow');
 }
@@ -24,7 +21,16 @@
 }
 
 .dataLine {
-  stroke: url('#rainbow');
+  /* stroke: url('#rainbow');
   filter: url('#lineBackDrop');
-  mask: url('#lineMask');
+  mask: url('#lineMask'); */
+}
+
+.additionalData {
+  opacity: 0;
+  transition: all 0.1s;
+}
+
+.dataPointCircle:hover + .additionalData {
+  opacity: 1;
 }

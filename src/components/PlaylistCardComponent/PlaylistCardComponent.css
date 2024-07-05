@@ -1,0 +1,9 @@
+.playlistDescription {
+  background-color: #f5f5f5b1;
+  transform: translateY(100%);
+  transition: all 0.3s ease;
+}
+
+.playlistImage:hover > .playlistDescription {
+  transform: translateY(0);
+}
