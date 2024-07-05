@@ -1,5 +1,29 @@
-.graphCanvas {
-  background-color: #aaaaaa;
-  width: 100%;
-  height: 100%;
+.graphSVG {
+  /* background-color: #e0e0e0; */
+  background-color: #ffffff;
+}
+
+.toolTipText {
+  font-size: 12px;
+  font-weight: bold;
+  fill: #000000;
+}
+
+.dataPointCircle {
+  fill: greenyellow;
+}
+
+.dataPointCircle:hover {
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+}
+
+.dataPointCircle.active {
+  fill: #00d9ff;
+}
+
+.dataLine {
+  stroke: url('#rainbow');
+  stroke-width: 4;
+  filter: url('#lineBackDrop');
+  mask: url('#lineMask');
 }

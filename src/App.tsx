@@ -1,17 +1,18 @@
 import { Col, Container, Navbar, Row } from 'react-bootstrap';
 import './App.css';
 import Logo from './assets/logo.svg';
-import GraphComponent from './components/GraphComponentSVG/GraphComponent';
+// import GraphComponent from './components/GraphComponentSVG/GraphComponent';
 import { DataSet } from './types/DataSet';
 import { useEffect, useState } from 'react';
 import DataPointEditorComponent from './components/DataPointEditorComponent/DataPointEditorComponent';
 import DurationInputComponent from './components/DurationInputComponent/DurationInputComponent';
 import moment from 'moment';
+import GraphComponent from './components/GraphComponent/GraphComponent';
 
 function App() {
   const progressSteps = 5;
   const bpmSteps = 5;
-  const [dataState, setData] = useState<DataSet>({
+  const [dataState, setDataState] = useState<DataSet>({
     0: 50,
     20: 70,
     50: 60,
@@ -40,7 +41,7 @@ function App() {
     if (!dataState[0] || isNaN(dataState[0])) {
       const sortedDataArray = Object.entries(dataState).sort(([a], [b]) => parseInt(a) - parseInt(b));
       if (sortedDataArray.length <= 1) {
-        setData((prev) => ({ ...prev, 0: 50 }));
+        setDataState((prev) => ({ ...prev, 0: 50 }));
         return;
       }
       const firstProgress = +sortedDataArray[0][0];
@@ -48,12 +49,12 @@ function App() {
       const newDataState = { ...dataState };
       delete newDataState[firstProgress];
       newDataState[0] = firstBpm;
-      setData(newDataState);
+      setDataState(newDataState);
     }
     if (!dataState[100] || isNaN(dataState[100])) {
       const sortedDataArray = Object.entries(dataState).sort(([a], [b]) => parseInt(a) - parseInt(b));
       if (sortedDataArray.length <= 1) {
-        setData((prev) => ({ ...prev, 100: 50 }));
+        setDataState((prev) => ({ ...prev, 100: 50 }));
         return;
       }
       const lastProgress = +sortedDataArray[sortedDataArray.length - 1][0];
@@ -61,7 +62,7 @@ function App() {
       const newDataState = { ...dataState };
       delete newDataState[lastProgress];
       newDataState[100] = lastBpm;
-      setData(newDataState);
+      setDataState(newDataState);
     }
   }, [dataState]);
 
@@ -84,7 +85,7 @@ function App() {
           <Col xs={9} style={{ maxHeight: '50vh' }}>
             <GraphComponent
               dataState={dataState}
-              setData={setData}
+              setData={setDataState}
               progressSteps={progressSteps}
               bpmSteps={bpmSteps}
               durationMs={durationMs}
@@ -93,7 +94,7 @@ function App() {
           <Col xs={3} className="overflow-y-auto" style={{ maxHeight: '50vh' }}>
             <DataPointEditorComponent
               dataState={dataState}
-              setData={setData}
+              setData={setDataState}
               progressSteps={progressSteps}
               durationMs={durationMs}
             />

@@ -105,11 +105,15 @@ const DataPointEditorComponent: FC<Props> = ({ dataState, setData, progressSteps
     }
   };
 
+  useEffect(() => {
+    setLocalBpm(Object.values(dataState));
+  }, [dataState]);
+
   return (
     <>
       {dataState &&
         Object.entries(dataState)
-          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+          .sort(([a], [b]) => parseFloat(a) - parseFloat(b))
           .map(([progress], i, sortedArray) => (
             <Row key={progress} className="position-relative mb-3">
               <Col xs={12}>
