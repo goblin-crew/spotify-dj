@@ -168,7 +168,7 @@ const PlaylistSelectionComponent: FC<Props> = ({ sdk, dataState, durationMs }) =
               </Col>
             )}
 
-            {/* {status.state === 'success' && (
+             {status.state === 'success' && (
               <p>
                 Playlist created: {status.data.name} -{' '}
                 <a
@@ -179,7 +179,7 @@ const PlaylistSelectionComponent: FC<Props> = ({ sdk, dataState, durationMs }) =
                   {status.data.external_urls.spotify}
                 </a>
               </p>
-            )} */}
+            )}
           </Row>
         </>
       ) : (
